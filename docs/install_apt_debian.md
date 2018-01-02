@@ -5,44 +5,51 @@ title: "Installation: Debian"
 # Debian Installation
 
 Caffe packages are available for several Debian versions, as shown in the
-following chart
+following chart:
 
 ```
-Your Distro     |  CPU_ONLY  |  CUDA  |     Alias
+Your Distro     |  CPU_ONLY  |  CUDA  | Codename
 ----------------+------------+--------+-------------------
-Debian/stable   |     ✘      |   ✘    | Debian Jessie
-Debian/testing  |     ✔      |   ☐    | Debian Stretch/Sid
-Debian/unstable |     ✔      |   ✔    | Debian Sid
+Debian/oldstable|     ✘      |   ✘    | Jessie (8.0)
+Debian/stable   |     ✔      |   ✔    | Stretch (9.0)
+Debian/testing  |     ✔      |   ✔    | Buster
+Debian/unstable |     ✔      |   ✔    | Buster
 ```
 
 * `✘ ` You should take a look at [Ubuntu installation instruction](install_apt.html).
 
 * `✔ ` You can install caffe with a single command line following this guide.
 
-* `☐ ` The same with `✔ `. However it will not work any more when Debian/Stretch becomes the stable branch.
+* [Package status of CPU-only version](https://tracker.debian.org/pkg/caffe)
 
-Last update: 2017-01-05
+* [Package status of CUDA version](https://tracker.debian.org/pkg/caffe-contrib)
+
+Last update: 2017-07-08
 
 ## Binary installation with APT
 
-Apart from the installation methods based on source, Debian/unstable
-and Debian/testing users can install pre-compiled Caffe packages via the official archive.
+Apart from the installation methods based on source, Debian users can install
+pre-compiled Caffe packages from the official archive with APT.
 
-Make sure that there is something like the follows in your `/etc/apt/sources.list`:
+Make sure that your `/etc/apt/sources.list` contains `contrib` and `non-free`
+sections if you want to install the CUDA version, for instance:
+
 ```
-deb http://MIRROR/debian CODENAME main contrib non-free
+deb http://ftp2.cn.debian.org/debian sid main contrib non-free
 ```
-where `MIRROR` is your favorate Debian mirror, and `CODENAME ∈ {testing,stretch,sid}`.
 
 Then we update APT cache and directly install Caffe. Note, the cpu version and
-the cuda version cannot be installed at the same time.
+the cuda version cannot coexist.
+
 ```
-# apt update
-# apt install [ caffe-cpu | caffe-cuda ]
-# caffe                                              # command line interface working
-# python3 -c 'import caffe; print(caffe.__path__)'   # python3 interface working
+$ sudo apt update
+$ sudo apt install [ caffe-cpu | caffe-cuda ]
+$ caffe                                              # command line interface working
+$ python3 -c 'import caffe; print(caffe.__path__)'   # python3 interface working
 ```
-It should work out of box.
+
+These Caffe packages should work for you out of box. However, the CUDA version
+may break if your NVIDIA driver and CUDA toolkit are not installed with APT.
 
 #### Customizing caffe packages
 
@@ -50,58 +57,65 @@ Some users may need to customize the Caffe package. The way to customize
 the package is beyond this guide. Here is only a brief guide of producing
 the customized `.deb` packages. 
 
-Make sure that there is something like this in your `/etc/apt/sources.list`:
+Make sure that there is a `dec-src` source in your `/etc/apt/sources.list`,
+for instance:
+
 ```
 deb http://ftp2.cn.debian.org/debian sid main contrib non-free
 deb-src http://ftp2.cn.debian.org/debian sid main contrib non-free
 ```
 
 Then we build caffe deb files with the following commands:
+
 ```
 $ sudo apt update
-$ sudo apt install build-essential debhelper devscripts    # standard package building tools
-$ sudo apt build-dep [ caffe-cpu | caffe-cuda ]            # the most elegant way to pull caffe build dependencies
-$ apt source [ caffe-cpu | caffe-cuda ]               # download the source tarball and extract
+$ sudo apt install build-essential debhelper devscripts  # standard package building tools
+$ sudo apt build-dep [ caffe-cpu | caffe-cuda ]          # the most elegant way to pull caffe build dependencies
+$ apt source [ caffe-cpu | caffe-cuda ]                  # download the source tarball and extract
 $ cd caffe-XXXX
-[ ... optional, customize caffe code/build ... ]
-$ dch -llocal "Modified XXX in order to XXX"          # write your one-line changelog
-$ debuild -B -j4                                      # build caffe with 4 parallel jobs (similar to make -j4)
+[ ... optional, customizing caffe code/build ... ]
+$ dch --local "Modified XXX"                             # bump package version and write changelog
+$ debuild -B -j4                                         # build caffe with 4 parallel jobs (similar to make -j4)
 [ ... building ...]
-$ debc                                                # optional, if you want to check the package contents
-$ sudo debi                                           # optional, install the generated packages
+$ debc                                                   # optional, if you want to check the package contents
+$ sudo debi                                              # optional, install the generated packages
+$ ls ../                                                 # optional, you will see the resulting packages
 ```
-The resulting deb packages can be found under the parent directory of the source tree.
 
-Note, the `dch ...` command line above is for bumping the package version number
-and adding an entry to the package changelog. If you would like to write
-more than one changelog entry, use subsequent `dch` command (see `man 1 dch`)
-instead of manually modifing `debian/changelog` unless you know how to keep its format correct.
+It is a BUG if the package failed to build without any change.
 The changelog will be installed at e.g. `/usr/share/doc/caffe-cpu/changelog.Debian.gz`.
 
 ## Source installation
 
-Source installation under Debian/unstable is similar to that of Ubuntu, but
+Source installation under Debian/unstable and Debian/testing is similar to that of Ubuntu, but
 here is a more elegant way to pull caffe build dependencies:
+
 ```
 $ sudo apt build-dep [ caffe-cpu | caffe-cuda ]
 ```
+
 Note, this requires a `deb-src` entry in your `/etc/apt/sources.list`.
 
 #### Compiler Combinations
 
-Some users may find their favorate compiler doesn't work well with CUDA.
+Some users may find their favorate compiler doesn't work with CUDA.
+
 ```
-CXX compiler |  CUDA 7.5  |  CUDA 8.0  |
--------------+------------+------------+-
-GCC-7        |     ?      |     ?      |
-GCC-6        |     ✘      |     ✘      |
-GCC-5        |     ✔ [1]  |     ✔      |
-CLANG-4.0    |     ?      |     ?      |
-CLANG-3.9    |     ✘      |     ✘      |
-CLANG-3.8    |     ?      |     ✔      |
+CXX compiler |  CUDA 7.5  |  CUDA 8.0  |  CUDA 9.0  |
+-------------+------------+------------+------------+
+GCC-8        |     ?      |     ?      |     ?      |
+GCC-7        |     ?      |     ?      |     ?      |
+GCC-6        |     ✘      |     ✘      |     ✔      |
+GCC-5        |     ✔ [1]  |     ✔      |     ✔      |
+-------------+------------+------------+------------+
+CLANG-4.0    |     ?      |     ?      |     ?      |
+CLANG-3.9    |     ✘      |     ✘      |     ✔      |
+CLANG-3.8    |     ?      |     ✔      |     ✔      |
 ```
 
 `[1]` CUDA 7.5 's `host_config.h` must be patched before working with GCC-5.
+
+`[2]` CUDA 9.0: https://devblogs.nvidia.com/parallelforall/cuda-9-features-revealed/
 
 BTW, please forget the GCC-4.X series, since its `libstdc++` ABI is not compatible with GCC-5's.
 You may encounter failure linking GCC-4.X object files against GCC-5 libraries.
@@ -144,12 +158,6 @@ and hack the packaging scripts, then build your customized package.
 * Where are the examples, the models and other documentation stuff?
 
 ```
-sudo apt install caffe-doc
-dpkg -L caffe-doc
+$ sudo apt install caffe-doc
+$ dpkg -L caffe-doc
 ```
-
-* Where can I find the Debian package status?
-
-https://tracker.debian.org/pkg/caffe  (for the CPU_ONLY version)
-
-https://tracker.debian.org/pkg/caffe-contrib  (for the CUDA version)
