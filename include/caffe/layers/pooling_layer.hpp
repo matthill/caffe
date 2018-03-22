@@ -49,6 +49,7 @@ class PoolingLayer : public Layer<Dtype> {
   int pad_h_, pad_w_;
   int channels_;
   int height_, width_;
+  bool pooling_ceil;
   int pooled_height_, pooled_width_;
   bool global_pooling_;
   Blob<Dtype> rand_idx_;

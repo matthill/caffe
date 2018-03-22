@@ -148,16 +148,11 @@ void BatchNormLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
   // normalize variance
   caffe_add_scalar(variance_.count(), eps_, variance_.mutable_cpu_data());
-  caffe_sqrt(variance_.count(), variance_.cpu_data(),
-             variance_.mutable_cpu_data());
+  caffe_sqrt(variance_.count(), variance_.cpu_data(), variance_.mutable_cpu_data());
 
   // replicate variance to input size
-  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num, channels_, 1, 1,
-      batch_sum_multiplier_.cpu_data(), variance_.cpu_data(), 0.,
-      num_by_chans_.mutable_cpu_data());
-  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, channels_ * num,
-      spatial_dim, 1, 1., num_by_chans_.cpu_data(),
-      spatial_sum_multiplier_.cpu_data(), 0., temp_.mutable_cpu_data());
+  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num, channels_, 1, 1, batch_sum_multiplier_.cpu_data(), variance_.cpu_data(), 0., num_by_chans_.mutable_cpu_data());
+  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, channels_ * num, spatial_dim, 1, 1., num_by_chans_.cpu_data(), spatial_sum_multiplier_.cpu_data(), 0., temp_.mutable_cpu_data());
   caffe_div(temp_.count(), top_data, temp_.cpu_data(), top_data);
   // TODO(cdoersch): The caching is only needed because later in-place layers
   //                 might clobber the data.  Can we skip this if they won't?
